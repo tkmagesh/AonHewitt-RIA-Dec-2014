@@ -13,62 +13,94 @@
 	</style>
 	<script src="angular.js"></script>
 	<script>
-	function Task(defaults){
-		this.id = defaults.id || new Date().valueOf();
-		this.name = defaults.name || '';
-		this.category = defaults.category || "Official";
-		this.isCompleted = defaults.isCompleted || false;
-	}
 
-	Task.prototype.toggle = function(){
-		this.isCompleted = !this.isCompleted;
-	}
+		
+		angular.module("myApp", []);
 
+		angular.module("myApp").factory("Task", function(){
+			function Task(defaults){
+				this.id = defaults.id || new Date().valueOf();
+				this.name = defaults.name || '';
+				this.category = defaults.category || "Official";
+				this.isCompleted = defaults.isCompleted || false;
+			}
 
-	function taskController($scope){
-		$scope.categories = [
-			"Personal",
-			"Official",
-			"Recreational"
-		]
-		$scope.tasks = [
-			
-		];
-		$scope.add = function(taskName, category){
-			var newTask = new Task({
-				name : taskName,
-				isCompleted : false,
-				category : category
+			Task.prototype.toggle = function(){
+				this.isCompleted = !this.isCompleted;
+			}
+			return Task;
+		});
+
+		angular.module("myApp").service("taskStorage", function TaskStorage(Task){
+			var storage = window.localStorage;
+			this.save = function(task){
+				storage.setItem(task.id.toString(), window.JSON.stringify(task));
+			};
+
+			this.remove = function(task){
+				storage.removeItem(task.id.toString());
+			};
+
+			this.getAll = function(){
+				var result = [];
+				for(var i=0;i<storage.length;i++){
+					var taskString = storage.getItem(storage.key(i));
+					result.push(new Task(window.JSON.parse(taskString)));
+				}
+				return result;
+			}
+		});
+
+		angular.module("myApp").controller("taskController", function taskController($scope, taskStorage, Task){
+				//var taskStorage = new TaskStorage();
+				$scope.categories = [
+					"Personal",
+					"Official",
+					"Recreational"
+				]
+				$scope.tasks = taskStorage.getAll();
+
+				$scope.add = function(taskName, category){
+					var newTask = new Task({
+						name : taskName,
+						isCompleted : false,
+						category : category
+					});
+					taskStorage.save(newTask);
+					$scope.tasks.push(newTask);
+				};
+				$scope.toggle = function(task){
+					task.toggle();
+					taskStorage.save(task);
+				};
+				$scope.removeCompleted = function(){
+					for(var i=$scope.tasks.length-1; i>=0; i--){
+						var task = $scope.tasks[i];
+						if (task.isCompleted){
+							taskStorage.remove(task);
+							$scope.tasks.splice(i,1);
+						}
+					}
+				};
+
+				$scope.getTaskCountFor = function(category){
+					return $scope.tasks.filter(function(task){
+						return task.category === category;
+					}).length;
+				}
 			});
-			$scope.tasks.push(newTask);
-		};
-		$scope.toggle = function(task){
-			task.toggle();
-		};
-		$scope.removeCompleted = function(){
-			$scope.tasks = $scope.tasks.filter(function(task){
-				return !task.isCompleted;
-			});
-		};
 
-		$scope.getTaskCountFor = function(category){
-			return $scope.tasks.filter(function(task){
-				return task.category === category;
-			}).length;
-		}
-
-
-	}
+	
 	</script>
 </head>
-<body ng-app>
+<body ng-app="myApp">
 	<h1>Task Manager</h1>
 	<hr>
 	<div data-ng-controller="taskController">
 		<div>{{(tasks | filter:{isCompleted :true}).length}}/{{tasks.length}}</div>
 		<label for="">Task :</label>
 		<input type="text" data-ng-model="newTask" >
-		<select data-ng-model="taskCategory" data-ng-options="category as category for category in categories">
+		<select data-ng-model="taskCategory" data-ng-options="category for category in categories">
 			 <option value="">-- choose category --</option>
 		</select>
 		<input type="button" value="Add Task" data-ng-click="add(newTask, taskCategory)">
@@ -77,7 +109,7 @@
 			<h3>{{category}}</h3>
 			<ol>
 				<li 
-					data-ng-repeat="task in tasks | filter:category"
+					data-ng-repeat="task in tasks | filter:{category : category}"
 					data-ng-click="toggle(task)"
 					data-ng-class="{completed : task.isCompleted}"
 				>{{task.name}}</li>
