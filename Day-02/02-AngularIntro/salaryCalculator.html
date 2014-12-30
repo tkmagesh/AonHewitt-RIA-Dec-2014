@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" ng-app>
+<head>
+	<meta charset="UTF-8">
+	<title>Salary Calculator</title>
+	<style type="text/css">
+	label{
+		display: block;
+	}
+	#divResult {
+		color : red;
+		font-size: 28pt;
+	}
+	</style>
+	<script src="angular.js"></script>
+	<script>
+		function SalaryCalculator(basic,hra,da,tax){
+			this.basic = basic;
+			this.hra = hra;
+			this.da = da;
+			this.tax = tax;
+			this.salary = 0;
+			
+		}
+		SalaryCalculator.prototype.calculate = function(){
+			var gross = parseInt(this.basic,10) + parseInt(this.hra,10) + parseInt(this.da,10);
+			this.salary = gross * ((100-parseInt(this.tax,10))/100);
+		}
+
+		function appController($scope){
+			$scope.calculator = new SalaryCalculator();
+		}
+		function calculatorController($scope){
+			
+		}
+	</script>
+</head>
+<body data-ng-controller="appController">
+
+	<h1>Salary Calculator</h1>
+	<div data-ng-controller="calculatorController">
+		<hr>
+		<div>
+			<label for="">Basic :</label>
+			<input type="text"  data-ng-model="calculator.basic">
+		</div>
+		<div>
+			<label for="">Hra :</label>
+			<input type="text"  data-ng-model="calculator.hra">
+		</div>
+		<div>
+			<label for="">Da :</label>
+			<input type="text"  data-ng-model="calculator.da">
+		</div>
+		<div>
+			<label for="">Tax :</label>
+			<input type="range" min="0" max="30" data-ng-model="calculator.tax">
+			<span id="spanTax">{{calculator.tax}}%</span>
+		</div>
+		<div>
+			<input type="button" value="Calculate" data-ng-click="calculator.calculate()">
+		</div>
+		<div>
+			<div id="divResult">{{calculator.salary}}</div>
+		</div>
+	</div>
+	<div data-ng-controller="calculatorController">
+		<hr>
+		<div>
+			<label for="">Basic :</label>
+			<input type="text"  data-ng-model="calculator.basic">
+		</div>
+		<div>
+			<label for="">Hra :</label>
+			<input type="text"  data-ng-model="calculator.hra">
+		</div>
+		<div>
+			<label for="">Da :</label>
+			<input type="text"  data-ng-model="calculator.da">
+		</div>
+		<div>
+			<label for="">Tax :</label>
+			<input type="range" min="0" max="30" data-ng-model="calculator.tax">
+			<span id="spanTax">{{calculator.tax}}%</span>
+		</div>
+		<div>
+			<input type="button" value="Calculate" data-ng-click="calculator.calculate()">
+		</div>
+		<div>
+			<div id="divResult">{{calculator.salary}}</div>
+		</div>
+	</div>
+</body>
+</html>

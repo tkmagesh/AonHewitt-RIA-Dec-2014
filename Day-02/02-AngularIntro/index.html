@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Angular Intro</title>
+	<style>
+	input{
+		display : block;
+	}
+	</style>
+	<script src="angular.js"></script>
+	<script>
+	function greetController($scope){
+		$scope.onGreet = function(){
+			var hour = new Date().getHours();
+			$scope.greetMsg = "Hi " + $scope.firstName + " " + $scope.lastName + ", " + "Have a good " + (hour < 12 ? "morning" : "evening");
+		}
+	}
+	</script>
+</head>
+<body ng-app data-ng-controller="greetController">
+		<h1>Greet</h1>
+		<hr>
+		<label for="">First Name :</label>
+		<input type="text" data-ng-model="firstName">
+		<label for="">Last Name:</label>
+		<input type="text" data-ng-model="lastName">
+		<input type="button" value="Greet" data-ng-click="onGreet()">
+		<div data-ng-bind="greetMsg"></div>
+</body>
+</html>
