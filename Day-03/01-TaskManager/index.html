@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Task Manager</title>
+	<style type="text/css">
+		.completed {
+			color : red;
+			text-decoration: line-through; font-weight: bold;
+			font-style: italic;
+		}
+	</style>
+	<script src="angular.js"></script>
+	<script src="moment.js"></script>
+	<script>
+
+		angular.module("utils", []);
+		angular.module("utils").filter("toMoment", function(){
+			return function(data){
+				data = data || new Date();
+				return moment(data).fromNow();
+			}
+		});	
+		
+		angular.module("myApp", ["utils"]);
+
+		angular.module("myApp").factory("Task", function(){
+			function Task(defaults){
+				this.id = defaults.id || new Date().valueOf();
+				this.name = defaults.name || '';
+				this.category = defaults.category || "Official";
+				this.isCompleted = defaults.isCompleted || false;
+				this.createdAt = defaults.createdAt || new Date();
+			}
+
+			Task.prototype.toggle = function(){
+				this.isCompleted = !this.isCompleted;
+			}
+			return Task;
+		});
+
+		angular.module("myApp").service("taskStorage", function TaskStorage(Task){
+			var storage = window.localStorage;
+			this.save = function(task){
+				storage.setItem(task.id.toString(), window.JSON.stringify(task));
+			};
+
+			this.remove = function(task){
+				storage.removeItem(task.id.toString());
+			};
+
+			this.getAll = function(){
+				var result = [];
+				for(var i=0;i<storage.length;i++){
+					var taskString = storage.getItem(storage.key(i));
+					result.push(new Task(window.JSON.parse(taskString)));
+				}
+				return result;
+			}
+		});
+
+		/*angular.module("taskApp").factory("taskService", function(){
+			return {
+				getAll : function(){
+
+				}
+			}
+		})*/
+
+		angular.module("myApp").controller("taskController", function taskController($scope, taskStorage, Task, $http){
+				//var taskStorage = new TaskStorage();
+				$scope.categories = [
+					"Personal",
+					"Official",
+					"Recreational"
+				]
+				
+
+				$scope.tasks = taskStorage.getAll();
+				
+				$scope.add = function(taskName, category){
+					var newTask = new Task({
+						name : taskName,
+						isCompleted : false,
+						category : category
+					});
+					taskStorage.save(newTask);
+					$scope.tasks.push(newTask);
+				};
+				$scope.toggle = function(task){
+					task.toggle();
+					taskStorage.save(task);
+				};
+				$scope.removeCompleted = function(){
+					for(var i=$scope.tasks.length-1; i>=0; i--){
+						var task = $scope.tasks[i];
+						if (task.isCompleted){
+							taskStorage.remove(task);
+							$scope.tasks.splice(i,1);
+						}
+					}
+				};
+
+				$scope.getTaskCountFor = function(category){
+					return $scope.tasks.filter(function(task){
+						return task.category === category;
+					}).length;
+				}
+			});
+
+		
+	</script>
+</head>
+<body ng-app="myApp">
+	<h1>Task Manager</h1>
+	<hr>
+	<div data-ng-controller="taskController">
+		<div>{{(tasks | filter:{isCompleted :true}).length}}/{{tasks.length}}</div>
+		<label for="">Task :</label>
+		<input type="text" data-ng-model="newTask" >
+		<select data-ng-model="taskCategory" data-ng-options="category for category in categories">
+			 <option value="">-- choose category --</option>
+		</select>
+		<input type="button" value="Add Task" data-ng-click="add(newTask, taskCategory)">
+		<input type="button" value="Remove Completed" data-ng-click="removeCompleted()">
+		<br>
+		<br>
+		<div>
+			<label for="">Search :</label>
+			<input type="search" data-ng-model="searchTask.name">
+		</div>
+		<table width="75%">
+			<tr>
+				
+				<th data-ng-click="descending = (sortOrder==='name') ? !descending : false; sortOrder='name'">Name</th>
+				<th data-ng-click="descending = (sortOrder==='isCompleted') ? !descending : false; sortOrder='isCompleted'">Status</th>
+				<th data-ng-click="descending = (sortOrder==='category') ? !descending : false; sortOrder='category'">Category</th>
+				<th data-ng-click="descending = (sortOrder==='createdAt') ? !descending : false; sortOrder='createdAt'">Created At</th>
+				<th></th>
+			</tr>
+			<tr data-ng-repeat="task in tasks | filter:searchTask | orderBy:sortOrder:descending">
+				<td><span data-ng-class="{completed : task.isCompleted}">{{task.name}}</span></td>
+				<td>{{task.isCompleted ? "Completed" : "In Progress"}}</td>
+				<td>{{task.category}}</td>
+				<td>{{task.createdAt | toMoment}}</td>
+				<td><input type="button" value="Toggle" data-ng-click="toggle(task)"></td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>
